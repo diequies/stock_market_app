@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS traded_objects (
     symbol VARCHAR(12) NOT NULL,
     exchange VARCHAR(256),
     exchange_short_name VARCHAR(256),
-    time_window VARCHAR(256),
     PRIMARY KEY (symbol),
     FOREIGN KEY (symbol) REFERENCES ohlcv_table(symbol)
 );

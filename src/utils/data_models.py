@@ -24,5 +24,21 @@ class TradedObject:
     exchange: str
     exchange_short_name: str
     object_type: TradedObjectType
-    time_window: TradeTimeWindow
+
+    def __hash__(self):
+        return hash((self.name, self.symbol, self.exchange, self.exchange_short_name,
+                     self.object_type.name))
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return (self.name == other.name and self.symbol == other.symbol
+                and self.exchange == other.exchange
+                and self.exchange_short_name == other.exchange_short_name
+                and self.object_type.name == other.object_type.name)
+
+
+@dataclass
+class DataTradedObject(TradedObject):
+    """ TradedObject including the trading data """
     ohlcv_list: List[OHLCV]
