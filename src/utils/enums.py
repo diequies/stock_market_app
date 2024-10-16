@@ -11,6 +11,14 @@ class TradedObjectType(Enum):
         'id': 1,
         'endpoint_name': 'etf'
     }
+    TRUST = {
+        'id': 2,
+        'endpoint_name': None
+    }
+    OTHER = {
+        'id': 3,
+        'endpoint_name': None
+    }
 
     @classmethod
     def get_traded_object_type_from_name(cls, traded_object_type_name: str):
@@ -18,7 +26,7 @@ class TradedObjectType(Enum):
             if traded_object_type.name.lower() == traded_object_type_name.lower():
                 return traded_object_type
 
-        return TradedObjectType.STOCK
+        return TradedObjectType.OTHER
 
 
 class TradeTimeWindow(Enum):

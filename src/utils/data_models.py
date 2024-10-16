@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from src.utils.enums import TradedObjectType, TradeTimeWindow
 
@@ -16,25 +16,39 @@ class OHLCV:
     volume: float
 
 
-@dataclass
 class TradedObject:
     """ Class containing the object traded data """
-    name: str
-    symbol: str
-    exchange: str
-    exchange_short_name: str
-    object_type: TradedObjectType
+
+    def __init__(
+            self,
+            name: Optional[str],
+            symbol: str,
+            exchange: Optional[str],
+            exchange_short_name: Optional[str],
+            object_type: TradedObjectType
+    ):
+        if name is None:
+            self.name = ""
+        else:
+            self.name = name.replace("'", "")
+        self.symbol = symbol
+        if exchange is None:
+            self.exchange = ""
+        else:
+            self.exchange = exchange.replace("'", "")
+        if exchange_short_name is None:
+            self.exchange_short_name = ""
+        else:
+            self.exchange_short_name = exchange_short_name.replace("'", "")
+        self.object_type = object_type
 
     def __hash__(self):
-        return hash((self.name, self.symbol, self.exchange, self.exchange_short_name,
-                     self.object_type.name))
+        return hash((self.symbol, self.object_type.name))
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        return (self.name == other.name and self.symbol == other.symbol
-                and self.exchange == other.exchange
-                and self.exchange_short_name == other.exchange_short_name
+        return (self.symbol == other.symbol
                 and self.object_type.name == other.object_type.name)
 
 

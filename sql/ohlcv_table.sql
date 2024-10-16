@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS ohlcv_table (
     volume INT,
     PRIMARY KEY (symbol)
 );
+
+-- DROP TABLE ohlcv_table;

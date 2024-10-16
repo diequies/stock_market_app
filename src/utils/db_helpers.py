@@ -26,7 +26,8 @@ def get_all_traded_objects_from_db() -> Set[TradedObject]:
                     name,
                     symbol,
                     exchange,
-                    exchange_short_name
+                    exchange_short_name,
+                    object_type
                 FROM traded_objects
             """
 
