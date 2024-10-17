@@ -2,6 +2,8 @@ import os
 import requests
 import logging
 from typing import Set, Optional
+from tenacity import (retry, stop_after_attempt, wait_exponential,
+                      retry_if_exception_type)
 
 from requests import RequestException
 
@@ -17,6 +19,10 @@ init_sentry()
 # Set up logger for the module
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+MAX_RETRY = 3
+MIN_RETRY_WAIT_TIME = 2
+MAX_RETRY_WAIT_TIME = 10
 
 
 class SymbolListCollector:
@@ -57,6 +63,12 @@ class SymbolListCollector:
             self.new_symbol_list = set()
 
     @staticmethod
+    @retry(
+        stop=stop_after_attempt(MAX_RETRY),
+        wait=wait_exponential(multiplier=1, min=MIN_RETRY_WAIT_TIME,
+                              max=MAX_RETRY_WAIT_TIME),
+        retry=retry_if_exception_type((RequestException, ValueError))
+    )
     def _get_traded_objects_by_type(trade_object_type: TradedObjectType) -> (
             Set)[TradedObject]:
 
@@ -97,9 +109,11 @@ class SymbolListCollector:
         except RequestException as req_err:
             logger.error(
                 f"Request error while fetching {trade_object_type.name}: {req_err}")
+            raise
 
         except ValueError as val_err:
             logger.error(f"Data format error for {trade_object_type.name}: {val_err}")
+            raise
 
         except Exception as gen_err:
             logger.error(f"Unexpected error for {trade_object_type.name}: {gen_err}")
