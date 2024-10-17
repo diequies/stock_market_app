@@ -82,6 +82,9 @@ class SymbolListCollector:
                         f"{trade_object_type.value['endpoint_name']}/list?"
                         f"apikey={api_token}")
 
+        valid_traded_objects = set()
+        invalid_entries = 0
+
         try:
             response = requests.get(endpoint_url, timeout=30)
             response.raise_for_status()
@@ -91,20 +94,34 @@ class SymbolListCollector:
                 raise ValueError(
                     "Unexpected response format, expected a list of objects.")
 
-            traded_objects = {
-                TradedObject(
-                    name=data['name'],
-                    symbol=data['symbol'],
-                    exchange=data['exchange'],
-                    exchange_short_name=data['exchangeShortName'],
-                    object_type=TradedObjectType.get_traded_object_type_from_name(
-                        data['type'])
-                ) for data in response_data
-            }
+            for data in response_data:
+                try:
 
-            logger.info(f"Fetched {len(traded_objects)} {trade_object_type.name.lower()} "
-                         f"objects.")
-            return traded_objects
+                    traded_object = TradedObject(
+                        name=data['name'],
+                        symbol=data['symbol'],
+                        exchange=data['exchange'],
+                        exchange_short_name=data['exchangeShortName'],
+                        object_type=TradedObjectType.get_traded_object_type_from_name(
+                            data['type'])
+                    )
+                    valid_traded_objects.add(traded_object)
+
+                except KeyError as e:
+                    logger.warning(f"Missing key {e} in entry: {data}")
+                    invalid_entries += 1
+                except Exception as gen_err:
+                    logger.warning(f"Error processing entry {data}: {gen_err}")
+                    invalid_entries += 1
+
+            if invalid_entries > 0:
+                logger.warning(f"Skipped {invalid_entries} invalid "
+                               f"{trade_object_type.name.lower()} objects.")
+
+            logger.info(f"Fetched {len(valid_traded_objects)} "
+                        f"{trade_object_type.name.lower()} objects.")
+
+            return valid_traded_objects
 
         except RequestException as req_err:
             logger.error(
