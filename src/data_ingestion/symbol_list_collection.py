@@ -1,7 +1,7 @@
 import os
 import requests
 import logging
-from typing import Set, Optional, List
+from typing import Set, List
 from tenacity import (retry, stop_after_attempt, wait_exponential,
                       retry_if_exception_type)
 
