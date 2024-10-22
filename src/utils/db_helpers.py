@@ -60,15 +60,14 @@ def save_new_traded_objects_in_db(traded_objects: Set[TradedObject]) -> None:
     ]
 
     query = f"""
-                INSERT INTO traded_objects (
-                    name, 
-                    symbol,
-                    exchange,
-                    exchange_short_name,
-                    object_type
-                    )
-                VALUES {','.join(strings_to_persist)};
-            """
+    INSERT INTO traded_objects (
+    name, 
+    symbol,
+    exchange,
+    exchange_short_name,
+    object_type
+    )
+    VALUES {','.join(strings_to_persist)};"""
 
     cursor.execute(query)
     con.commit()
