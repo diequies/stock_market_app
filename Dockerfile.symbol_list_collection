@@ -1,0 +1,36 @@
+# Base image
+FROM python:3.10-slim
+
+# Install cron
+RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the source code into the container
+COPY . /app
+
+# Install any Python dependencies (add a requirements.txt file for pip)
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Copy the cron job file into the container
+COPY architecture/cron_job_files/symbol_list_collection_cron_job_file /etc/cron.d/symbol_list_collection_cron_job_file
+
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/symbol_list_collection_cron_job_file
+RUN chmod +x /app/src/data_ingestion/symbol_list_collection.py
+
+# Apply the cron job
+RUN crontab /etc/cron.d/symbol_list_collection_cron_job_file
+
+# Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+
+# Copy the startup script
+COPY start_with_env.sh /app/start_with_env.sh
+
+# Make the script executable
+RUN chmod +x /app/start_with_env.sh
+
+# Start cron and tail the log file
+CMD cron -f && tail -f /var/log/cron.log

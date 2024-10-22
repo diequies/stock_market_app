@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-from src.utils.enums import TradedObjectType, TradeTimeWindow
+from utils.enums import TradedObjectType, TradeTimeWindow
 
 
 @dataclass

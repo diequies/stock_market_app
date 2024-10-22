@@ -1,4 +1,5 @@
 import os
+
 import requests
 import logging
 from typing import Set, List
@@ -141,10 +142,10 @@ class SymbolListCollector:
                                             trade_object_type=trade_object_type)
 
 
-def main():
+def main_symbol_list_collection():
     init_sentry()
     SymbolListCollector().update_traded_objects()
 
 
 if __name__ == '__main__':
-    main()
+    main_symbol_list_collection()
