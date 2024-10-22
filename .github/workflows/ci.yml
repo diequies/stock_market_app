@@ -37,7 +37,7 @@ jobs:
     - name: Type check with mypy
       run: |
         export MYPYPATH=src
-        mypy src --install-types
+        mypy src
 
     - name: Run tests
       run: |
