@@ -41,4 +41,5 @@ jobs:
 
     - name: Run tests
       run: |
+        export MYPYPATH=src
         pytest src/tests
