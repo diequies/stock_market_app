@@ -36,6 +36,7 @@ jobs:
 
     - name: Type check with mypy
       run: |
+        export MYPYPATH=src
         mypy src
 
     - name: Run tests
