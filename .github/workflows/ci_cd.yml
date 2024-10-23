@@ -61,6 +61,10 @@ jobs:
         cd ..
         tar -czf app.tar.gz ./stock_market_app
 
+    - name: Ensure target directory exists on EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/${{ secrets.EC2_USER }}/stock_market_app"
+
     - name: Copy files to EC2
       run: |
         cd ..
