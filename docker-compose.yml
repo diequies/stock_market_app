@@ -8,6 +8,19 @@ services:
     container_name: symbol_list_collector
     volumes:
       - ./logs:/app/var/logs
+    environment:
+      PYTHONPATH: '/app/src'
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_RDS_DB: ${AWS_RDS_DB}
+      AWS_RDS_HOST: ${AWS_RDS_HOST}
+      AWS_RDS_PASSWORD: ${AWS_RDS_PASSWORD}
+      AWS_RDS_PORT: ${AWS_RDS_PORT}
+      AWS_RDS_USER: ${AWS_RDS_USER}
+      AWS_REGION: ${AWS_REGION}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      ALPHA_VANTAGE_TOKEN: ${ALPHA_VANTAGE_TOKEN}
+      FINANCIAL_MODELING_PREP_TOKEN: ${FINANCIAL_MODELING_PREP_TOKEN}
+      SENTRY_DSN: ${SENTRY_DSN}
     restart: on-failure
     command: /app/start_with_env.sh
     
