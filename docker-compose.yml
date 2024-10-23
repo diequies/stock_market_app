@@ -1,8 +1,8 @@
 services:
   symbol-list-collector:
     build:
-      context: .
-      dockerfile: ./stock_market_app/Dockerfile.symbol_list_collection
+      context: ./stock_market_app
+      dockerfile: Dockerfile.symbol_list_collection
     container_name: symbol_list_collector
     volumes:
       - ./logs:/app/var/logs
