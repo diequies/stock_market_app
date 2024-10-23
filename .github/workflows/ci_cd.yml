@@ -61,34 +61,34 @@ jobs:
         cd ..
         tar -czf app.tar.gz ./stock_market_app
 
-    - name: Ensure target directory exists on EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app"
-
-    - name: Copy files to EC2
-      run: |
-        cd ..
-        scp -r -o StrictHostKeyChecking=no app.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app/
-
-    - name: Run deployment script on EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-        cd /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app/
-        tar -xzf app.tar.gz
-        cd stock_market_app
-        # Set environment variables using Docker Compose
-        AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_RDS_DB=${{ secrets.AWS_RDS_DB }}
-        AWS_RDS_HOST=${{ secrets.AWS_RDS_HOST }}
-        AWS_RDS_PASSWORD=${{ secrets.AWS_RDS_PASSWORD }}
-        AWS_RDS_PORT=${{ secrets.AWS_RDS_PORT }}
-        AWS_RDS_USER=${{ secrets.AWS_RDS_USER }}
-        AWS_REGION=${{ secrets.AWS_REGION }}
-        AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        ALPHA_VANTAGE_TOKEN=${{ secrets.ALPHA_VANTAGE_TOKEN }}
-        FINANCIAL_MODELING_PREP_TOKEN=${{ secrets.FINANCIAL_MODELING_PREP_TOKEN }}
-        SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-        export AWS_ACCESS_KEY_ID AWS_RDS_DB AWS_RDS_HOST AWS_RDS_PASSWORD AWS_RDS_PORT AWS_RDS_USER AWS_REGION AWS_SECRET_ACCESS_KEY ALPHA_VANTAGE_TOKEN FINANCIAL_MODELING_PREP_TOKEN SENTRY_DSN
-        docker-compose down
-        docker-compose up -d --build
-        EOF
+#    - name: Ensure target directory exists on EC2
+#      run: |
+#        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app"
+#
+#    - name: Copy files to EC2
+#      run: |
+#        cd ..
+#        scp -r -o StrictHostKeyChecking=no app.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app/
+#
+#    - name: Run deployment script on EC2
+#      run: |
+#        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+#        cd /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app/
+#        tar -xzf app.tar.gz
+#        cd stock_market_app
+#        # Set environment variables using Docker Compose
+#        AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+#        AWS_RDS_DB=${{ secrets.AWS_RDS_DB }}
+#        AWS_RDS_HOST=${{ secrets.AWS_RDS_HOST }}
+#        AWS_RDS_PASSWORD=${{ secrets.AWS_RDS_PASSWORD }}
+#        AWS_RDS_PORT=${{ secrets.AWS_RDS_PORT }}
+#        AWS_RDS_USER=${{ secrets.AWS_RDS_USER }}
+#        AWS_REGION=${{ secrets.AWS_REGION }}
+#        AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#        ALPHA_VANTAGE_TOKEN=${{ secrets.ALPHA_VANTAGE_TOKEN }}
+#        FINANCIAL_MODELING_PREP_TOKEN=${{ secrets.FINANCIAL_MODELING_PREP_TOKEN }}
+#        SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+#        export AWS_ACCESS_KEY_ID AWS_RDS_DB AWS_RDS_HOST AWS_RDS_PASSWORD AWS_RDS_PORT AWS_RDS_USER AWS_REGION AWS_SECRET_ACCESS_KEY ALPHA_VANTAGE_TOKEN FINANCIAL_MODELING_PREP_TOKEN SENTRY_DSN
+#        docker-compose down
+#        docker-compose up -d --build
+#        EOF
