@@ -63,18 +63,18 @@ jobs:
 
     - name: Ensure target directory exists on EC2
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/${{ secrets.EC2_USER }}/stock_market_app"
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app"
 
     - name: Copy files to EC2
       run: |
         cd ..
-        scp -r -o StrictHostKeyChecking=no app.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/stock_market_app/
+        scp -r -o StrictHostKeyChecking=no app.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app/
 
     - name: Run deployment script on EC2
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-        cd /home/${{ secrets.EC2_USER }}/stock_market_app/
-        tar -xzf app.tar.gz /home/${{ secrets.EC2_USER }}/stock_market_app/
+        cd /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app/
+        tar -xzf app.tar.gz /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app/
         cd app
         # Set environment variables using Docker Compose
         AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
