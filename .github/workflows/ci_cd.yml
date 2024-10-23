@@ -25,7 +25,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r app/requirements.txt
         pip install flake8 mypy pytest
 
     - name: Lint with flake8
@@ -58,12 +58,12 @@ jobs:
 
     - name: Copy files to EC2
       run: |
-        scp -r -o StrictHostKeyChecking=no . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/stock_market_app/
+        scp -r -o StrictHostKeyChecking=no ./app/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/stock_market_app/
 
     - name: Run deployment script on EC2
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-        cd /home/${{ secrets.EC2_USER }}/stock_market_app
+        cd /home/${{ secrets.EC2_USER }}/stock_market_app/app
         # Set environment variables using Docker Compose
         AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_RDS_DB=${{ secrets.AWS_RDS_DB }}
