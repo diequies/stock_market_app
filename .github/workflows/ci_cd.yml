@@ -58,7 +58,8 @@ jobs:
 
     - name: Package files
       run: |
-        tar --exclude='.git' --exclude='.github' --exclude='app.tar.gz' -czf app.tar.gz .
+        cd ..
+        tar -czf app.tar.gz ./stock_market_app
 
     - name: Copy files to EC2
       run: |
