@@ -56,12 +56,12 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.EC2_KEY }}
 
+    - name: Remove existing files from EC2 (Optional)
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "rm /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/app.tar.gz"
+
     - name: Checkout code
       uses: actions/checkout@v3
-
-#    - name: Remove existing files from EC2 (Optional)
-#      run: |
-#        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "rm -rf /home/${{ secrets.EC2_USER }}/${{ secrets.EC2_USER }}/stock_market_app"
 
     - name: Package files
       run: |
