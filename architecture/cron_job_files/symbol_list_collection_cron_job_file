@@ -1,1 +1,1 @@
-0 7 * * * PYTHONPATH=/app/src /usr/local/bin/python /app/src/data_ingestion/symbol_list_collection.py >> /var/log/cron.log 2>> /var/log/cron_error.log
+*/1 * * * * PYTHONPATH=/app/src /usr/local/bin/python /app/src/data_ingestion/symbol_list_collection.py >> /var/log/cron.log 2>> /var/log/cron_error.log
