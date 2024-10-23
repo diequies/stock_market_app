@@ -3,7 +3,7 @@ version: '3.10'
 services:
   symbol-list-collector:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile.symbol_list_collection
     container_name: symbol_list_collector
     volumes:
