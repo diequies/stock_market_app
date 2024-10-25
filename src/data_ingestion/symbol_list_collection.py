@@ -2,7 +2,7 @@ import os
 
 import requests
 import logging
-from typing import Set, List
+from typing import Set, List, Optional
 from tenacity import (retry, stop_after_attempt, wait_exponential,
                       retry_if_exception_type)
 
@@ -32,7 +32,7 @@ class SymbolListCollector:
 
     def __init__(self):
         self.current_symbol_list: Set[TradedObject] = get_all_traded_objects_from_db()
-        self.new_symbol_list: Set[TradedObject] = None
+        self.new_symbol_list: Optional[Set[TradedObject]] = None
 
     def update_traded_objects(self) -> None:
         try:

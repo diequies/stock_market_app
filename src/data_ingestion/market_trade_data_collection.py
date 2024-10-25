@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import List, Dict
+from typing import Dict, Generator
 import yfinance as yf
 
 from config.sentry_config import init_sentry
@@ -34,13 +34,14 @@ class MarketTradeDataCollector:
             yf.download(symbols_batch, period=period_to_back_fill.value,
                         interval=TradeTimeWindow.DAILY)
 
-    def _build_symbol_batches(self) -> List[str]:
-        n_batches = math.ceil(len(self.symbols_to_update_map.keys()) / self.BATCH_SIZE)
+    def _build_symbol_batches(self) -> Generator[str]:
+        keys_list = list(self.symbols_to_update_map.keys())
+        n_batches = math.ceil(len(keys_list) / self.BATCH_SIZE)
         for batch in range(n_batches):
             print(f"Requesting data for batch {batch + 1} of {n_batches}")
             start_index = batch * self.BATCH_SIZE
             end_index = start_index + self.BATCH_SIZE
-            yield self.symbols_to_update_map.keys()[start_index:end_index]
+            yield keys_list[start_index:end_index]
 
     @staticmethod
     def _get_symbols_to_update_strings() -> Dict[str, DataTradedObject]:
