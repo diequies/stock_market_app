@@ -31,10 +31,10 @@ class TradedObjectType(Enum):
 
 class TradeTimeWindow(Enum):
     """ Time window of the market data point """
-    INTRADAY = 0
-    DAILY = 1
-    WEEKLY = 2
-    MONTHLY = 3
+    DAILY = "1d"
+    WEEKLY = "1wk"
+    MONTHLY = "1mo"
+    THREE_MONTHS = "3mo"
 
     @classmethod
     def get_trade_time_window_from_name(cls, trade_time_window_name: str):
@@ -43,3 +43,16 @@ class TradeTimeWindow(Enum):
                 return trade_time_window
 
         return TradeTimeWindow.DAILY
+
+
+class YFINANCE_INTERVALS(Enum):
+    """ The different interval options to request data to yahoo finance """
+    ONE_WEEK = "1wk"
+    ONE_MONTH = "1mo"
+    THREE_MONTHS = "3mo"
+    SIX_MONTHS = "6mo"
+    ONE_YEAR = "1y"
+    TWO_YEARS = "2y"
+    FIVE_YEARS = "5y"
+    TEN_YEARS = "10y"
+

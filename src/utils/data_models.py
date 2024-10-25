@@ -16,6 +16,7 @@ class OHLCV:
     volume: float
 
 
+@dataclass
 class TradedObject:
     """ Class containing the object traded data """
 
@@ -56,3 +57,14 @@ class TradedObject:
 class DataTradedObject(TradedObject):
     """ TradedObject including the trading data """
     ohlcv_list: List[OHLCV]
+
+    def __init__(self, traded_object: TradedObject, ohlcv_list: List[OHLCV]):
+        super().__init__(
+            name=traded_object.name,
+            symbol=traded_object.symbol,
+            exchange=traded_object.exchange,
+            exchange_short_name=traded_object.exchange_short_name,
+            object_type=traded_object.object_type
+        )
+
+        self.ohlcv_list = ohlcv_list
