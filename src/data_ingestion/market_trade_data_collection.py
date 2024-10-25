@@ -1,7 +1,7 @@
 import logging
 import math
 from typing import Dict, Generator, List
-import yfinance as yf
+import yfinance as yf  # type: ignore
 
 from config.sentry_config import init_sentry
 from utils.data_models import DataTradedObject
