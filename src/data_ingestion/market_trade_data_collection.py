@@ -32,8 +32,8 @@ class MarketTradeDataCollector:
                                     period_to_back_fill: YFINANCE_INTERVALS,
                                     time_window: TradeTimeWindow) -> None:
 
-        days_to_update = int(period_to_back_fill.value['time_in_seconds'] / time_window
-                             .value['time_in_seconds'])
+        days_to_update = (int(period_to_back_fill.value['time_in_seconds'])
+                          / int(time_window.value['time_in_seconds']))
 
         for symbols_batch in self._build_symbol_batches():
 

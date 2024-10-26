@@ -4,7 +4,7 @@ from typing import Set, List
 
 import pandas.io.sql as psql
 import pymysql
-from pandas.core.interchange.dataframe_protocol import DataFrame
+from pandas import DataFrame
 
 from utils.data_models import TradedObject
 from utils.enums import TradedObjectType, YFINANCE_INTERVALS, TradeTimeWindow
@@ -81,7 +81,7 @@ def get_market_trade_data(symbols: List[str], period: YFINANCE_INTERVALS,
 
     con = get_mysql_connection()
 
-    from_unix_time = int(time.time()) - period.value['time_in_seconds']
+    from_unix_time = int(time.time()) - int(period.value['time_in_seconds'])
 
     query = f"""
                 SELECT
