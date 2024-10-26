@@ -43,7 +43,7 @@ class MarketTradeDataCollector:
 
             symbols_up_to_date = current_data["symbol"].value_counts()
             symbols_up_to_date = (
-                symbols_up_to_date)[symbols_up_to_date >= days_to_update]
+                symbols_up_to_date[symbols_up_to_date.ge(days_to_update)])
 
             symbols_batch = list(set(symbols_batch)
                                  .difference(set(symbols_up_to_date.index.tolist())))
