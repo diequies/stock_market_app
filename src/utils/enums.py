@@ -1,6 +1,11 @@
+from dataclasses import dataclass
 from enum import Enum
 
-from utils.data_models import YFinanceTime
+
+@dataclass
+class YFinanceTime:
+    time_in_seconds: int
+    yfinance_notation: str
 
 
 class TradedObjectType(Enum):
