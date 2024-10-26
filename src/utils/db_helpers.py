@@ -7,7 +7,7 @@ import pymysql
 from pandas import DataFrame
 
 from utils.data_models import TradedObject
-from utils.enums import TradedObjectType, YFINANCE_INTERVALS, TradeTimeWindow
+from utils.enums import TradedObjectType, YFinanceIntervals, TradeTimeWindow
 
 
 def get_mysql_connection():
@@ -76,12 +76,12 @@ def save_new_traded_objects_in_db(traded_objects: Set[TradedObject]) -> None:
     con.commit()
 
 
-def get_market_trade_data(symbols: List[str], period: YFINANCE_INTERVALS,
+def get_market_trade_data(symbols: List[str], period: YFinanceIntervals,
                           time_window: TradeTimeWindow) -> DataFrame:
 
     con = get_mysql_connection()
 
-    from_unix_time = int(time.time()) - int(period.value['time_in_seconds'])
+    from_unix_time = int(time.time() - period.value.time_in_seconds)
 
     query = f"""
                 SELECT
@@ -93,7 +93,7 @@ def get_market_trade_data(symbols: List[str], period: YFINANCE_INTERVALS,
                     close,
                     volume
                 FROM ohlcv_table
-                WHERE time_window = '{time_window}'
+                WHERE time_window = '{time_window.value.yfinance_notation}'
                 AND open_date > {from_unix_time}
                 AND symbol in (\'{"','".join(symbols)}\')
             """

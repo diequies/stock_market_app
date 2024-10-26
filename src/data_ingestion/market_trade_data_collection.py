@@ -6,7 +6,7 @@ import yfinance as yf  # type: ignore
 from config.sentry_config import init_sentry
 from utils.data_models import DataTradedObject
 from utils.db_helpers import get_all_traded_objects_from_db, get_market_trade_data
-from utils.enums import YFINANCE_INTERVALS, TradeTimeWindow
+from utils.enums import YFinanceIntervals, TradeTimeWindow
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,11 +29,11 @@ class MarketTradeDataCollector:
         pass
 
     def back_fill_trade_market_data(self,
-                                    period_to_back_fill: YFINANCE_INTERVALS,
+                                    period_to_back_fill: YFinanceIntervals,
                                     time_window: TradeTimeWindow) -> None:
 
-        days_to_update = (int(period_to_back_fill.value['time_in_seconds'])
-                          / int(time_window.value['time_in_seconds']))
+        days_to_update = (period_to_back_fill.value.time_in_seconds
+                          / time_window.value.time_in_seconds)
 
         for symbols_batch in self._build_symbol_batches():
 
@@ -49,8 +49,8 @@ class MarketTradeDataCollector:
                                  .difference(set(symbols_up_to_date.index.tolist())))
 
             df = yf.download(symbols_batch,
-                             period=period_to_back_fill.value["yfinance_notation"],
-                             interval=time_window.value)
+                             period=period_to_back_fill.value.yfinance_notation,
+                             interval=time_window.value.yfinance_notation)
 
             df = df.melt(ignore_index=False).reset_index(drop=False)
             df = df.pivot_table(values='value', index=['Ticker', 'Date'],

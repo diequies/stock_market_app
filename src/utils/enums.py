@@ -1,5 +1,7 @@
 from enum import Enum
 
+from utils.data_models import YFinanceTime
+
 
 class TradedObjectType(Enum):
     """ Type of the traded object """
@@ -31,63 +33,40 @@ class TradedObjectType(Enum):
 
 class TradeTimeWindow(Enum):
     """ Time window of the market data point """
-    DAILY = {
-        "yfinance_notation": "1d",
-        "time_in_seconds": 60 * 60 * 24
-    }
-    WEEKLY = {
-        "yfinance_notation": "1wk",
-        "time_in_seconds": 60 * 60 * 24 * 7
-    }
-    MONTHLY = {
-        "yfinance_notation": "1mo",
-        "time_in_seconds": 60 * 60 * 24 * 30
-    }
-    THREE_MONTHS = {
-        "yfinance_notation": "3mo",
-        "time_in_seconds": 60 * 60 * 24 * 30 * 3
-    }
+    DAILY = YFinanceTime(time_in_seconds=60 * 60 * 24,
+                         yfinance_notation="1d")
+    WEEKLY = YFinanceTime(time_in_seconds=60 * 60 * 24 * 7,
+                          yfinance_notation="1wk")
+    MONTHLY = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30,
+                           yfinance_notation="1mo")
+    THREE_MONTHS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 3,
+                                yfinance_notation="1mo")
 
     @classmethod
     def get_trade_time_window_from_name(cls, trade_time_window_name: str):
         for trade_time_window in TradeTimeWindow:
-            if trade_time_window.name.lower() == trade_time_window_name.lower():
+            if (trade_time_window.value.yfinance_notation
+                    == trade_time_window_name.lower()):
                 return trade_time_window
 
         return TradeTimeWindow.DAILY
 
 
-class YFINANCE_INTERVALS(Enum):
+class YFinanceIntervals(Enum):
     """ The different interval options to request data to yahoo finance """
-    ONE_WEEK = {
-        "yfinance_notation": "1wk",
-        "time_in_seconds": 60 * 60 * 24 * 7
-    }
-    ONE_MONTH = {
-        "yfinance_notation": "1mo",
-        "time_in_seconds": 60 * 60 * 24 * 30
-    }
-    THREE_MONTHS = {
-        "yfinance_notation": "3mo",
-        "time_in_seconds": 60 * 60 * 24 * 30 * 3
-    }
-    SIX_MONTHS = {
-        "yfinance_notation": "6mo",
-        "time_in_seconds": 60 * 60 * 24 * 30 * 6
-    }
-    ONE_YEAR = {
-        "yfinance_notation": "1y",
-        "time_in_seconds": 60 * 60 * 24 * 30 * 12
-    }
-    TWO_YEARS = {
-        "yfinance_notation": "2y",
-        "time_in_seconds": 60 * 60 * 24 * 30 * 12 * 2
-    }
-    FIVE_YEARS = {
-        "yfinance_notation": "5y",
-        "time_in_seconds": 60 * 60 * 24 * 30 * 12 * 5
-    }
-    TEN_YEARS = {
-        "yfinance_notation": "10y",
-        "time_in_seconds": 60 * 60 * 24 * 30 * 12 * 10
-    }
+    ONE_WEEK = YFinanceTime(time_in_seconds=60 * 60 * 24 * 7,
+                            yfinance_notation="1wk")
+    ONE_MONTH = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30,
+                             yfinance_notation="1mo")
+    THREE_MONTHS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 3,
+                                yfinance_notation="3mo")
+    SIX_MONTHS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 6,
+                              yfinance_notation="6mo")
+    ONE_YEAR = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 12,
+                            yfinance_notation="1y")
+    TWO_YEARS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 12 * 2,
+                             yfinance_notation="2y")
+    FIVE_YEARS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 12 * 5,
+                              yfinance_notation="5y")
+    TEN_YEARS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 12 * 10,
+                             yfinance_notation="10y")

@@ -68,3 +68,9 @@ class DataTradedObject(TradedObject):
         )
 
         self.ohlcv_list = ohlcv_list
+
+
+@dataclass
+class YFinanceTime:
+    time_in_seconds: int
+    yfinance_notation: str
