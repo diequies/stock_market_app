@@ -9,3 +9,4 @@ types-pymysql
 types-pygments
 types-colorama
 types-setuptools
+pandas-stubs
