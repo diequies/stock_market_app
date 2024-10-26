@@ -1,10 +1,13 @@
 import os
-from typing import Set
+import time
+from typing import Set, List
 
+import pandas.io.sql as psql
 import pymysql
+from pandas.core.interchange.dataframe_protocol import DataFrame
 
 from utils.data_models import TradedObject
-from utils.enums import TradedObjectType
+from utils.enums import TradedObjectType, YFINANCE_INTERVALS, TradeTimeWindow
 
 
 def get_mysql_connection():
@@ -71,3 +74,28 @@ def save_new_traded_objects_in_db(traded_objects: Set[TradedObject]) -> None:
 
     cursor.execute(query)
     con.commit()
+
+
+def get_market_trade_data(symbols: List[str], period: YFINANCE_INTERVALS,
+                          time_window: TradeTimeWindow) -> DataFrame:
+
+    con = get_mysql_connection()
+
+    from_unix_time = int(time.time()) - period.value['time_in_seconds']
+
+    query = f"""
+                SELECT
+                    symbol,
+                    open_date,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                FROM ohlcv_table
+                WHERE time_window = '{time_window}'
+                AND open_date > {from_unix_time}
+                AND symbol in (\'{"','".join(symbols)}\')
+            """
+
+    return psql.read_sql(query, con)

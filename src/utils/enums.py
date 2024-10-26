@@ -31,10 +31,22 @@ class TradedObjectType(Enum):
 
 class TradeTimeWindow(Enum):
     """ Time window of the market data point """
-    DAILY = "1d"
-    WEEKLY = "1wk"
-    MONTHLY = "1mo"
-    THREE_MONTHS = "3mo"
+    DAILY = {
+        "yfinance_notation": "1d",
+        "time_in_seconds": 60 * 60 * 24
+    }
+    WEEKLY = {
+        "yfinance_notation": "1wk",
+        "time_in_seconds": 60 * 60 * 24 * 7
+    }
+    MONTHLY = {
+        "yfinance_notation": "1mo",
+        "time_in_seconds": 60 * 60 * 24 * 30
+    }
+    THREE_MONTHS = {
+        "yfinance_notation": "3mo",
+        "time_in_seconds": 60 * 60 * 24 * 30 * 3
+    }
 
     @classmethod
     def get_trade_time_window_from_name(cls, trade_time_window_name: str):
@@ -47,12 +59,35 @@ class TradeTimeWindow(Enum):
 
 class YFINANCE_INTERVALS(Enum):
     """ The different interval options to request data to yahoo finance """
-    ONE_WEEK = "1wk"
-    ONE_MONTH = "1mo"
-    THREE_MONTHS = "3mo"
-    SIX_MONTHS = "6mo"
-    ONE_YEAR = "1y"
-    TWO_YEARS = "2y"
-    FIVE_YEARS = "5y"
-    TEN_YEARS = "10y"
-
+    ONE_WEEK = {
+        "yfinance_notation": "1wk",
+        "time_in_seconds": 60 * 60 * 24 * 7
+    }
+    ONE_MONTH = {
+        "yfinance_notation": "1mo",
+        "time_in_seconds": 60 * 60 * 24 * 30
+    }
+    THREE_MONTHS = {
+        "yfinance_notation": "3mo",
+        "time_in_seconds": 60 * 60 * 24 * 30 * 3
+    }
+    SIX_MONTHS = {
+        "yfinance_notation": "6mo",
+        "time_in_seconds": 60 * 60 * 24 * 30 * 6
+    }
+    ONE_YEAR = {
+        "yfinance_notation": "1y",
+        "time_in_seconds": 60 * 60 * 24 * 30 * 12
+    }
+    TWO_YEARS = {
+        "yfinance_notation": "2y",
+        "time_in_seconds": 60 * 60 * 24 * 30 * 12 * 2
+    }
+    FIVE_YEARS = {
+        "yfinance_notation": "5y",
+        "time_in_seconds": 60 * 60 * 24 * 30 * 12 * 5
+    }
+    TEN_YEARS = {
+        "yfinance_notation": "10y",
+        "time_in_seconds": 60 * 60 * 24 * 30 * 12 * 10
+    }

@@ -5,7 +5,7 @@ import yfinance as yf  # type: ignore
 
 from config.sentry_config import init_sentry
 from utils.data_models import DataTradedObject
-from utils.db_helpers import get_all_traded_objects_from_db
+from utils.db_helpers import get_all_traded_objects_from_db, get_market_trade_data
 from utils.enums import YFINANCE_INTERVALS, TradeTimeWindow
 
 logging.basicConfig(
@@ -29,12 +29,34 @@ class MarketTradeDataCollector:
         pass
 
     def back_fill_trade_market_data(self,
-                                    period_to_back_fill: YFINANCE_INTERVALS) -> None:
-        for symbols_batch in self._build_symbol_batches():
-            yf.download(symbols_batch, period=period_to_back_fill.value,
-                        interval=TradeTimeWindow.DAILY)
+                                    period_to_back_fill: YFINANCE_INTERVALS,
+                                    time_window: TradeTimeWindow) -> None:
 
-    def _build_symbol_batches(self) -> Generator[List[str]]:
+        days_to_update = int(period_to_back_fill.value['time_in_seconds']
+                             / time_window.value['time_in_seconds'])
+
+        for symbols_batch in self._build_symbol_batches():
+
+            current_data = get_market_trade_data(symbols=symbols_batch,
+                                                 period=period_to_back_fill,
+                                                 time_window=time_window)
+
+            symbols_up_to_date = current_data["symbol"].value_counts()
+            symbols_up_to_date = (
+                symbols_up_to_date)[symbols_up_to_date >= days_to_update]
+
+            symbols_batch = list(set(symbols_batch)
+                                 .difference(set(symbols_up_to_date.index.tolist())))
+
+            df = yf.download(symbols_batch,
+                             period=period_to_back_fill.value["yfinance_notation"],
+                             interval=time_window.value)
+
+            df = df.melt(ignore_index=False).reset_index(drop=False)
+            df = df.pivot_table(values='value', index=['Ticker', 'Date'],
+                                columns='Price').reset_index(drop=False)
+
+    def _build_symbol_batches(self) -> Generator[List[str], None, None]:
         keys_list = list(self.symbols_to_update_map.keys())
         n_batches = math.ceil(len(keys_list) / self.BATCH_SIZE)
         for batch in range(n_batches):
