@@ -14,6 +14,7 @@ class OHLCV:
     low: float
     close: float
     volume: float
+    open_date: int
 
 
 @dataclass

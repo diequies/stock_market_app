@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS ohlcv_table (
     low FLOAT,
     close FLOAT,
     volume INT,
-    PRIMARY KEY (symbol)
+    open_date BIGINT NOT NULL,
+    PRIMARY KEY (symbol, time_window, open_date)
 );
 
 -- DROP TABLE ohlcv_table;

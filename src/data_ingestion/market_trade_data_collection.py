@@ -1,11 +1,15 @@
 import logging
 import math
 from typing import Dict, Generator, List
+
+import pandas as pd
 import yfinance as yf  # type: ignore
+from pandas.plotting import hist_frame
 
 from config.sentry_config import init_sentry
-from utils.data_models import DataTradedObject
-from utils.db_helpers import get_all_traded_objects_from_db, get_market_trade_data
+from utils.data_models import DataTradedObject, OHLCV
+from utils.db_helpers import get_all_traded_objects_from_db, get_market_trade_data, \
+    save_trade_market_data_in_db
 from utils.enums import YFinanceIntervals, TradeTimeWindow
 
 logging.basicConfig(
@@ -56,6 +60,33 @@ class MarketTradeDataCollector:
             df = df.pivot_table(values='value', index=['Ticker', 'Date'],
                                 columns='Price').reset_index(drop=False)
 
+            df['Date'] = df['Date'].apply(lambda x:  int(x.timestamp()))
+            df = df.drop(['Adj Close'], axis=1)
+            df.columns = ['symbol', 'open_date', 'close', 'high', 'low', 'open',
+                          'volume']
+
+            df = pd.concat([df, current_data], axis=0)
+            df = df.drop_duplicates(subset=['symbol', 'open_date'], keep=False)
+
+            symbols_to_update = list()
+
+            for symbol in df['symbol'].unique().tolist():
+                list_ohlcv = [OHLCV(
+                    symbol=symbol,
+                    time_window=time_window,
+                    open=ohlcv['open'],
+                    high=ohlcv['high'],
+                    low=ohlcv['low'],
+                    close=ohlcv['close'],
+                    volume=ohlcv['volume'],
+                    open_date=ohlcv['open_date']
+                ) for _, ohlcv in df[df['symbol'] == symbol].iterrows()]
+
+                self.symbols_to_update_map[symbol].ohlcv_list = list_ohlcv
+                symbols_to_update.append(self.symbols_to_update_map[symbol])
+
+            save_trade_market_data_in_db(symbols_to_update)
+
     def _build_symbol_batches(self) -> Generator[List[str], None, None]:
         keys_list = list(self.symbols_to_update_map.keys())
         n_batches = math.ceil(len(keys_list) / self.BATCH_SIZE)
@@ -76,7 +107,10 @@ class MarketTradeDataCollector:
 
 def main_market_trade_data_collection():
     init_sentry()
-    MarketTradeDataCollector()
+    collector = MarketTradeDataCollector()
+    collector.back_fill_trade_market_data(
+        period_to_back_fill=YFinanceIntervals.ONE_MONTH,
+        time_window=TradeTimeWindow.DAILY)
 
 
 if __name__ == '__main__':
