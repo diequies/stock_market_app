@@ -4,7 +4,6 @@ from typing import Dict, Generator, List
 
 import pandas as pd
 import yfinance as yf  # type: ignore
-from pandas.plotting import hist_frame
 
 from config.sentry_config import init_sentry
 from utils.data_models import DataTradedObject, OHLCV
