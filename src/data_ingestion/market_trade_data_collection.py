@@ -29,7 +29,7 @@ class MarketTradeDataCollector:
     def __init__(self):
         self.symbols_to_update_map: Dict[str, DataTradedObject] = (
             self._get_symbols_to_update_strings())
-        self.batch_size = self.DEFAULT_BATCH_SIZE
+        self.batch_size: int = self.DEFAULT_BATCH_SIZE
 
     def update_trade_market_data(self) -> None:
         pass
@@ -99,7 +99,7 @@ class MarketTradeDataCollector:
         grouped_data = data.groupby('symbol')
         for symbol, group in grouped_data:
             list_ohlcv = [OHLCV(
-                symbol=symbol,
+                symbol=str(symbol),
                 time_window=time_window,
                 open=ohlcv['open'],
                 high=ohlcv['high'],
@@ -109,7 +109,7 @@ class MarketTradeDataCollector:
                 open_date=ohlcv['open_date']
             ) for _, ohlcv in group.iterrows()]
 
-            data_object = self.symbols_to_update_map[symbol]
+            data_object = self.symbols_to_update_map[str(symbol)]
             data_object.ohlcv_list = list_ohlcv
             symbols_to_update.append(data_object)
         return symbols_to_update
