@@ -1,5 +1,6 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import math
+import time
 from typing import Dict, Generator, List
 
 import pandas as pd
@@ -24,12 +25,14 @@ class MarketTradeDataCollector:
 
     CALL_WAIT_TIME_SECONDS = 2
     DEFAULT_BATCH_SIZE = 500
-    MAX_WORKERS = 5
+    LOOKBACK_PERIOD_BACK_FILL = 60 * 60 * 24 * 20
 
     def __init__(self):
         self.symbols_to_update_map: Dict[str, DataTradedObject] = (
             self._get_symbols_to_update_strings())
         self.batch_size: int = self.DEFAULT_BATCH_SIZE
+        self.total_batches: int = math.ceil(
+            len(self.symbols_to_update_map) / self.batch_size)
 
     def update_trade_market_data(self) -> None:
         pass
@@ -37,32 +40,40 @@ class MarketTradeDataCollector:
     def back_fill_trade_market_data(self,
                                     period: YFinanceIntervals,
                                     time_window: TradeTimeWindow) -> None:
-
         self.batch_size = 100
-        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
-            futures = [
-                executor.submit(self._process_batch, symbols_batch, period,
-                                time_window)
-                for symbols_batch in self._build_symbol_batches()
-            ]
-            for future in as_completed(futures):
-                future.result()  # This will raise any exceptions if they occurred
+
+        for batch_index, symbols_batch in enumerate(self._build_symbol_batches()):
+            logger.info(f"Processing batch {batch_index} of {self.total_batches} "
+                        f"with {len(symbols_batch)} symbols.")
+            self._process_batch(symbols_batch, period, time_window)
 
     def _process_batch(self, symbols_batch: List[str], period: YFinanceIntervals,
                        time_window: TradeTimeWindow) -> None:
 
-        logger.info(f"Processing batch with {len(symbols_batch)} symbols.")
         current_data = get_market_trade_data(symbols=symbols_batch,
                                              period=period,
                                              time_window=time_window)
+        symbols_batch = self._clean_existing_symbols(symbols=symbols_batch,
+                                                     current_data=current_data)
         fetched_data = self._fetch_yfinance_data(symbols=symbols_batch,
                                                  time_window=time_window)
+        current_data = current_data[current_data['symbol'].isin(symbols_batch)]
         merged_data = self._merge_and_clean_data(new_data=fetched_data,
                                                  existing_data=current_data)
         symbols_to_update = (
             self._prepare_symbols_for_update(data=merged_data,
                                              time_window=time_window))
         save_trade_market_data_in_db(symbols_to_update)
+
+    def _clean_existing_symbols(self, symbols: List[str],
+                                current_data: DataFrame) -> List[str]:
+
+        time_threshold = int(time.time() - self.LOOKBACK_PERIOD_BACK_FILL)
+
+        already_present_symbols = current_data[
+            current_data['open_date'] <= time_threshold]['symbol'].unique().tolist()
+
+        return list(set(symbols).difference(set(already_present_symbols)))
 
     @staticmethod
     def _fetch_yfinance_data(symbols: List[str],
@@ -74,10 +85,11 @@ class MarketTradeDataCollector:
                          group_by='ticker')
         df = df.stack(level=0).reset_index().rename(columns={"level_1": "symbol"})
         df["open_date"] = df["Date"].apply(lambda x: int(x.timestamp()))
-        df = df[["symbol", 'open_data', "Open",
+        df["time_window"] = time_window.value.yfinance_notation
+        df = df[["Ticker", 'open_date', "Open",
                  "High", "Low", "Close", "Volume"]].rename(
             columns={"Open": "open", "High": "high", "Low": "low", "Close": "close",
-                     "Volume": "volume"}
+                     "Volume": "volume", "Ticker": "symbol"}
         )
 
         return df
@@ -86,8 +98,9 @@ class MarketTradeDataCollector:
     def _merge_and_clean_data(new_data: DataFrame,
                               existing_data: DataFrame) -> DataFrame:
         combined_data = pd.concat([new_data, existing_data], ignore_index=True)
-        return combined_data.drop_duplicates(subset=['symbol', 'open_data'],
-                                             keep="last")
+        return combined_data.drop_duplicates(subset=['symbol', 'time_window',
+                                                     'open_date'],
+                                             keep=False)
 
     def _prepare_symbols_for_update(
             self,
@@ -96,11 +109,19 @@ class MarketTradeDataCollector:
 
         symbols_to_update = list()
 
+        # Make a copy of the symbol keys to avoid modifying the dictionary
+        # during iteration
+        symbols_copy = list(self.symbols_to_update_map.keys())
+
         grouped_data = data.groupby('symbol')
         for symbol, group in grouped_data:
+
+            if symbol not in symbols_copy:
+                continue  # Skip any symbols not in the original map
+
             list_ohlcv = [OHLCV(
                 symbol=str(symbol),
-                time_window=time_window,
+                time_window=ohlcv['time_window'],
                 open=ohlcv['open'],
                 high=ohlcv['high'],
                 low=ohlcv['low'],
