@@ -108,7 +108,7 @@ def save_trade_market_data_in_db(objects_list: List[DataTradedObject]) -> None:
     cursor = con.cursor()
 
     strings_to_persist = [
-        (f"('{ohlcv.symbol}', '{ohlcv.time_window}', "
+        (f"('{ohlcv.symbol}', '{ohlcv.time_window.value.yfinance_notation}', "
          f"'{ohlcv.open}', '{ohlcv.high}', '{ohlcv.low}', '{ohlcv.close}', "
          f"'{ohlcv.volume}', '{ohlcv.open_date}')")
         for data_list in objects_list for ohlcv in data_list.ohlcv_list
@@ -125,7 +125,8 @@ def save_trade_market_data_in_db(objects_list: List[DataTradedObject]) -> None:
     volume,
     open_date
     )
-    VALUES {','.join(strings_to_persist)};"""
+    VALUES {','.join(strings_to_persist)}
+    ON DUPLICATE KEY UPDATE symbol = symbol;"""
 
     cursor.execute(query)
     con.commit()
