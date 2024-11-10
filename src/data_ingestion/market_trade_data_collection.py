@@ -40,7 +40,7 @@ class MarketTradeDataCollector:
         try:
             self.symbols_to_update_map: Dict[str, DataTradedObject] = (
                 self._get_symbols_to_update_strings())
-            self.batch_size: Optional[int] = None
+            self.batch_size: int = BATCH_SIZE_DEFAULT
             logger.info("MarketTradeDataCollector initialised successfully.")
         except Exception as e:
             logger.error(f"Failed to initialise MarketTradeDataCollector: {e}")
