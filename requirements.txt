@@ -3,7 +3,7 @@ pymysql==1.1.1
 sentry-sdk==2.16.0
 tenacity==9.0.0
 requests==2.32.3
-yfinance==0.2.44
+yfinance==0.2.49
 sqlalchemy==2.0.36
 types-requests
 types-pymysql

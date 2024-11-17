@@ -1,6 +1,7 @@
 import logging
 import time
 from http.client import HTTPException
+from random import shuffle
 from typing import Dict, Generator, List
 
 import pandas as pd
@@ -23,8 +24,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-BATCH_SIZE_BACK_FILL = 100
-BATCH_SIZE_DEFAULT = 250
+BATCH_SIZE_DEFAULT = 100
 LOOKBACK_PERIOD_BACK_FILL_DAYS = 365
 MAX_BACK_FILL_PERIOD_YEARS = 5
 LOOKBACK_PERIOD_DEFAULT_DAYS = 1
@@ -81,6 +81,7 @@ class MarketTradeDataCollector:
 
         try:
             fetched_data = self._fetch_yfinance_data(symbols=symbols_batch,
+                                                     period=period,
                                                      time_window=time_window)
         except Exception as e:
             logger.error(f"Error fetching data from yfinance for batch: {e}")
@@ -121,10 +122,11 @@ class MarketTradeDataCollector:
         reraise=True
     )
     def _fetch_yfinance_data(symbols: List[str],
+                             period: YFinanceIntervals,
                              time_window: TradeTimeWindow) -> DataFrame:
 
         df = yf.download(symbols,
-                         period='max',
+                         period=period.value.yfinance_notation,
                          interval=time_window.value.yfinance_notation,
                          group_by='ticker')
         df = (df.stack(level=0, future_stack=True)
@@ -187,6 +189,7 @@ class MarketTradeDataCollector:
 
     def _build_symbol_batches(self) -> Generator[List[str], None, None]:
         keys_list = list(self.symbols_to_update_map.keys())
+        shuffle(keys_list)
         for i in range(0, len(keys_list), self.batch_size):
             yield keys_list[i:i + self.batch_size]
 
@@ -202,11 +205,11 @@ class MarketTradeDataCollector:
 def back_fill_trade_market_data():
     init_sentry()
     collector = MarketTradeDataCollector(
-        batch_size=BATCH_SIZE_BACK_FILL,
+        batch_size=BATCH_SIZE_DEFAULT,
         lookback_period_days=LOOKBACK_PERIOD_BACK_FILL_DAYS
     )
     collector.collect_save_trade_market_data(
-        period=YFinanceIntervals.FIVE_YEARS,
+        period=YFinanceIntervals.MAX,
         time_window=TradeTimeWindow.DAILY
     )
 
@@ -218,10 +221,10 @@ def collect_save_new_market_data():
         lookback_period_days=LOOKBACK_PERIOD_DEFAULT_DAYS
     )
     collector.collect_save_trade_market_data(
-        period=YFinanceIntervals.ONE_WEEK,
+        period=YFinanceIntervals.ONE_MONTH,
         time_window=TradeTimeWindow.DAILY
     )
 
 
 if __name__ == '__main__':
-    back_fill_trade_market_data()
+    collect_save_new_market_data()

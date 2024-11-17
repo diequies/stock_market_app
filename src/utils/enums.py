@@ -59,8 +59,10 @@ class TradeTimeWindow(Enum):
 
 class YFinanceIntervals(Enum):
     """ The different interval options to request data to yahoo finance """
-    ONE_WEEK = YFinanceTime(time_in_seconds=60 * 60 * 24 * 7,
-                            yfinance_notation="1wk")
+    ONE_DAY = YFinanceTime(time_in_seconds=60 * 60 * 24 * 1,
+                           yfinance_notation="1d")
+    FIVE_DAYS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 5,
+                             yfinance_notation="5d")
     ONE_MONTH = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30,
                              yfinance_notation="1mo")
     THREE_MONTHS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 3,
@@ -75,3 +77,5 @@ class YFinanceIntervals(Enum):
                               yfinance_notation="5y")
     TEN_YEARS = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 12 * 10,
                              yfinance_notation="10y")
+    MAX = YFinanceTime(time_in_seconds=60 * 60 * 24 * 30 * 12 * 99,
+                       yfinance_notation="max")
