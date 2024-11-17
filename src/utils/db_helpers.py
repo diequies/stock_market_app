@@ -2,9 +2,9 @@ import os
 import time
 from typing import Set, List
 
-import pandas.io.sql as psql
-import pymysql
+import pandas as pd
 from pandas import DataFrame
+from sqlalchemy import create_engine, text
 
 from utils.data_models import TradedObject, DataTradedObject
 from utils.enums import TradedObjectType, YFinanceIntervals, TradeTimeWindow
@@ -14,11 +14,13 @@ def get_mysql_connection():
 
     print("Connected to MySQL")
 
-    return pymysql.connect(host=os.environ.get("AWS_RDS_HOST"),
-                           user=os.environ.get("AWS_RDS_USER"),
-                           password=os.environ.get("AWS_RDS_PASSWORD"),
-                           db=os.environ.get("AWS_RDS_DB"),
-                           port=int(os.environ.get("AWS_RDS_PORT")))
+    database_uri = f"mysql+pymysql://{os.environ.get('AWS_RDS_USER')}:" \
+                   f"{os.environ.get('AWS_RDS_PASSWORD')}@" \
+                   f"{os.environ.get('AWS_RDS_HOST')}:" \
+                   f"{os.environ.get('AWS_RDS_PORT')}/" \
+                   f"{os.environ.get('AWS_RDS_DB')}"
+
+    return create_engine(database_uri)
 
 
 def get_all_traded_objects_from_db() -> Set[TradedObject]:
@@ -34,10 +36,9 @@ def get_all_traded_objects_from_db() -> Set[TradedObject]:
                 FROM traded_objects
             """
 
-    cursor = con.cursor()
-
-    cursor.execute(query)
-    result = cursor.fetchall()
+    with con.connect() as connection:
+        result = connection.execute(text(query))
+        data_points = result.fetchall()
 
     return {
         TradedObject(
@@ -46,23 +47,26 @@ def get_all_traded_objects_from_db() -> Set[TradedObject]:
             exchange=data[2],
             exchange_short_name=data[3],
             object_type=TradedObjectType.get_traded_object_type_from_name(data[4])
-        ) for data in result
+        ) for data in data_points
     }
 
 
 def save_new_traded_objects_in_db(traded_objects: Set[TradedObject]) -> None:
 
     con = get_mysql_connection()
-    cursor = con.cursor()
 
-    strings_to_persist = [
-        (f"('{traded_object.name}', '{traded_object.symbol}', "
-         f"'{traded_object.exchange}', '{traded_object.exchange_short_name}',"
-         f"'{traded_object.object_type.name}')")
+    values = [
+        {
+            "name": traded_object.name,
+            "symbol": traded_object.symbol,
+            "exchange": traded_object.exchange,
+            "exchange_short_name": traded_object.exchange_short_name,
+            "object_type": traded_object.object_type.name
+        }
         for traded_object in traded_objects
     ]
 
-    query = f"""
+    query = text(f"""
     INSERT INTO traded_objects (
     name, 
     symbol,
@@ -70,10 +74,13 @@ def save_new_traded_objects_in_db(traded_objects: Set[TradedObject]) -> None:
     exchange_short_name,
     object_type
     )
-    VALUES {','.join(strings_to_persist)};"""
+    VALUES (
+    :name, :symbol, :exchange, :exchange_short_name, :object_type
+    )""")
 
-    cursor.execute(query)
-    con.commit()
+    with con.connect() as connection:
+        connection.execute(query, values)
+        connection.commit()
 
 
 def get_market_trade_data(symbols: List[str], period: YFinanceIntervals,
@@ -99,22 +106,28 @@ def get_market_trade_data(symbols: List[str], period: YFinanceIntervals,
                 AND symbol in (\'{"','".join(symbols)}\')
             """
 
-    return psql.read_sql(query, con)
+    return pd.read_sql(query, con)
 
 
 def save_trade_market_data_in_db(objects_list: List[DataTradedObject]) -> None:
 
     con = get_mysql_connection()
-    cursor = con.cursor()
 
-    strings_to_persist = [
-        (f"('{ohlcv.symbol}', '{ohlcv.time_window.value.yfinance_notation}', "
-         f"'{ohlcv.open}', '{ohlcv.high}', '{ohlcv.low}', '{ohlcv.close}', "
-         f"'{ohlcv.volume}', '{ohlcv.open_date}')")
+    values = [
+        {
+            "symbol": ohlcv.symbol,
+            "time_window": ohlcv.time_window.value.yfinance_notation,
+            "open": ohlcv.open,
+            "high": ohlcv.high,
+            "low": ohlcv.low,
+            "close": ohlcv.close,
+            "volume": ohlcv.volume,
+            "open_date": ohlcv.open_date
+        }
         for data_list in objects_list for ohlcv in data_list.ohlcv_list
     ]
 
-    query = f"""
+    query = text(f"""
     INSERT INTO ohlcv_table (
     symbol,
     time_window,
@@ -125,8 +138,16 @@ def save_trade_market_data_in_db(objects_list: List[DataTradedObject]) -> None:
     volume,
     open_date
     )
-    VALUES {','.join(strings_to_persist)}
-    ON DUPLICATE KEY UPDATE symbol = symbol;"""
+    VALUES (
+        :symbol, :time_window, :open, :high, :low, :close, :volume, :open_date
+    )
+    ON DUPLICATE KEY UPDATE 
+        open = VALUES(open),
+        high = VALUES(high),
+        low = VALUES(low),
+        close = VALUES(close),
+        volume = VALUES(volume)""")
 
-    cursor.execute(query)
-    con.commit()
+    with con.connect() as connection:
+        connection.execute(query, values)
+        connection.commit()

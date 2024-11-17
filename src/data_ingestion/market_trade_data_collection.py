@@ -1,7 +1,7 @@
 import logging
 import time
 from http.client import HTTPException
-from typing import Dict, Generator, List, Optional
+from typing import Dict, Generator, List
 
 import pandas as pd
 import yfinance as yf  # type: ignore
@@ -14,7 +14,7 @@ from config.sentry_config import init_sentry
 from utils.data_models import DataTradedObject, OHLCV
 from utils.db_helpers import get_all_traded_objects_from_db, get_market_trade_data, \
     save_trade_market_data_in_db
-from utils.enums import YFinanceIntervals, TradeTimeWindow, YFinanceTime
+from utils.enums import YFinanceIntervals, TradeTimeWindow
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,23 +24,26 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE_BACK_FILL = 100
-BATCH_SIZE_DEFAULT = 500
+BATCH_SIZE_DEFAULT = 250
+LOOKBACK_PERIOD_BACK_FILL_DAYS = 365
+MAX_BACK_FILL_PERIOD_YEARS = 5
+LOOKBACK_PERIOD_DEFAULT_DAYS = 1
 
 
 class MarketTradeDataCollector:
     """ Collects and updates market trade data in the database. """
 
     CALL_WAIT_TIME_SECONDS = 2
-    LOOKBACK_PERIOD_BACK_FILL = 60 * 60 * 24 * 20
     MAX_RETRY = 3
     MIN_RETRY_WAIT_TIME = 2
     MAX_RETRY_WAIT_TIME = 10
 
-    def __init__(self):
+    def __init__(self, batch_size: int, lookback_period_days: int):
         try:
             self.symbols_to_update_map: Dict[str, DataTradedObject] = (
                 self._get_symbols_to_update_strings())
-            self.batch_size: int = BATCH_SIZE_DEFAULT
+            self.batch_size: int = batch_size
+            self.lookback_period = 60 * 60 * 24 * lookback_period_days
             logger.info("MarketTradeDataCollector initialised successfully.")
         except Exception as e:
             logger.error(f"Failed to initialise MarketTradeDataCollector: {e}")
@@ -48,10 +51,8 @@ class MarketTradeDataCollector:
 
     def collect_save_trade_market_data(self,
                                        period: YFinanceIntervals,
-                                       time_window: TradeTimeWindow,
-                                       batch_size: int) -> None:
+                                       time_window: TradeTimeWindow) -> None:
 
-        self.batch_size = batch_size
         total_batches = int(len(self.symbols_to_update_map) / self.batch_size)
 
         for batch_index, symbols_batch in enumerate(self._build_symbol_batches()):
@@ -101,10 +102,10 @@ class MarketTradeDataCollector:
     def _clean_existing_symbols(self, symbols: List[str],
                                 current_data: DataFrame) -> List[str]:
         try:
-            time_threshold = int(time.time() - self.LOOKBACK_PERIOD_BACK_FILL)
+            time_threshold = int(time.time() - self.lookback_period)
 
             already_present_symbols = current_data[
-                current_data['open_date'] <= time_threshold]['symbol'].unique().tolist()
+                current_data['open_date'] >= time_threshold]['symbol'].unique().tolist()
 
             return list(set(symbols).difference(set(already_present_symbols)))
         except Exception as e:
@@ -126,7 +127,8 @@ class MarketTradeDataCollector:
                          period='max',
                          interval=time_window.value.yfinance_notation,
                          group_by='ticker')
-        df = df.stack(level=0).reset_index().rename(columns={"level_1": "symbol"})
+        df = (df.stack(level=0, future_stack=True)
+              .reset_index().rename(columns={"level_1": "symbol"}))
         df["open_date"] = df["Date"].apply(lambda x: int(x.timestamp()))
         df["time_window"] = time_window.value.yfinance_notation
         df = df[["Ticker", 'open_date', "Open",
@@ -140,7 +142,12 @@ class MarketTradeDataCollector:
     @staticmethod
     def _merge_and_clean_data(new_data: DataFrame,
                               existing_data: DataFrame) -> DataFrame:
-        combined_data = pd.concat([new_data, existing_data], ignore_index=True)
+        if existing_data.shape[0] > 0:
+            combined_data = pd.concat([new_data, existing_data], ignore_index=True)
+        else:
+            combined_data = new_data
+        combined_data = combined_data[combined_data['open_date'] >= time.time()
+                                      - 60 * 60 * 24 * 365 * MAX_BACK_FILL_PERIOD_YEARS]
         return combined_data.drop_duplicates(subset=['symbol', 'time_window',
                                                      'open_date'],
                                              keep=False)
@@ -155,7 +162,7 @@ class MarketTradeDataCollector:
         # Make a copy of the symbol keys to avoid modifying the dictionary
         # during iteration
         symbols_copy = list(self.symbols_to_update_map.keys())
-
+        data = data.dropna()
         grouped_data = data.groupby('symbol')
         for symbol, group in grouped_data:
 
@@ -194,21 +201,25 @@ class MarketTradeDataCollector:
 
 def back_fill_trade_market_data():
     init_sentry()
-    collector = MarketTradeDataCollector()
+    collector = MarketTradeDataCollector(
+        batch_size=BATCH_SIZE_BACK_FILL,
+        lookback_period_days=LOOKBACK_PERIOD_BACK_FILL_DAYS
+    )
     collector.collect_save_trade_market_data(
         period=YFinanceIntervals.FIVE_YEARS,
-        time_window=TradeTimeWindow.DAILY,
-        batch_size=BATCH_SIZE_BACK_FILL
+        time_window=TradeTimeWindow.DAILY
     )
 
 
 def collect_save_new_market_data():
     init_sentry()
-    collector = MarketTradeDataCollector()
+    collector = MarketTradeDataCollector(
+        batch_size=BATCH_SIZE_DEFAULT,
+        lookback_period_days=LOOKBACK_PERIOD_DEFAULT_DAYS
+    )
     collector.collect_save_trade_market_data(
-        period=YFinanceIntervals.ONE_MONTH,
-        time_window=TradeTimeWindow.DAILY,
-        batch_size=BATCH_SIZE_DEFAULT
+        period=YFinanceIntervals.ONE_WEEK,
+        time_window=TradeTimeWindow.DAILY
     )
 
 
